@@ -1,10 +1,20 @@
-
 import React from "react";
-import { Link } from "react-router-dom";
-import { Heart, ShoppingCart, User, Menu } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Heart, ShoppingCart, User, Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCart } from "@/context/CartContext";
+import { useFavorites } from "@/context/FavoritesContext";
+import { useAuth } from "@/context/AuthContext";
+import { categories } from "@/data/products";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +22,10 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
+  const { totalItems } = useCart();
+  const { favorites } = useFavorites();
+  const { user, isAuthenticated, logout, isAdmin } = useAuth();
+  const location = useLocation();
 
   const navigationItems = [
     { label: "Home", path: "/" },
@@ -35,11 +49,40 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link
               key={item.path}
               to={item.path}
-              className="text-lg font-medium py-2 hover:text-primary"
+              className={`text-lg font-medium py-2 ${
+                location.pathname === item.path ? "text-primary" : "hover:text-primary"
+              }`}
             >
               {item.label}
             </Link>
           ))}
+          
+          {isAuthenticated && (
+            <>
+              <div className="border-t my-2 pt-2"></div>
+              <Link
+                to="/account"
+                className="text-lg font-medium py-2 hover:text-primary"
+              >
+                My Account
+              </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-lg font-medium py-2 hover:text-primary"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+              <button
+                onClick={logout}
+                className="text-lg font-medium py-2 hover:text-primary text-left flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            </>
+          )}
         </nav>
       </SheetContent>
     </Sheet>
@@ -63,7 +106,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className="text-sm font-medium hover:text-primary transition-colors"
+                      className={`text-sm font-medium transition-colors ${
+                        location.pathname === item.path
+                          ? "text-primary"
+                          : "hover:text-primary"
+                      }`}
                     >
                       {item.label}
                     </Link>
@@ -77,21 +124,62 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Button variant="ghost" size="icon" asChild>
               <Link to="/favorites">
                 <Heart className="h-5 w-5" />
+                {favorites.length > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {favorites.length}
+                  </span>
+                )}
                 <span className="sr-only">Favorites</span>
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
                 <span className="sr-only">Cart</span>
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/account">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Account</span>
-              </Link>
-            </Button>
+            
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <User className="h-5 w-5" />
+                    <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="sr-only">User menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="px-2 py-1.5 text-sm font-medium">
+                    {user?.name}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/account">My Account</Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/login">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Login</span>
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -114,11 +202,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div>
               <h4 className="font-medium mb-4">Shop</h4>
               <ul className="space-y-2">
-                <li><Link to="/categories/accessories" className="text-sm hover:underline">Accessories</Link></li>
-                <li><Link to="/categories/home-office" className="text-sm hover:underline">Home Office</Link></li>
-                <li><Link to="/categories/electronics" className="text-sm hover:underline">Electronics</Link></li>
-                <li><Link to="/categories/home" className="text-sm hover:underline">Home</Link></li>
-                <li><Link to="/categories/kitchen" className="text-sm hover:underline">Kitchen</Link></li>
+                <li><Link to="/shop" className="text-sm hover:underline">All Products</Link></li>
+                {categories.map(category => (
+                  <li key={category}>
+                    <Link to={`/shop?category=${category}`} className="text-sm hover:underline">{category}</Link>
+                  </li>
+                ))}
               </ul>
             </div>
             <div>

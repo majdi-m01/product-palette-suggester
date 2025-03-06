@@ -4,40 +4,45 @@ import { Heart, ShoppingCart } from "lucide-react";
 import { Product } from "@/types/product";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
+import { useCart } from "@/context/CartContext";
+import { useFavorites } from "@/context/FavoritesContext";
+import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const addToCart = () => {
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
-    });
-  };
-
-  const addToFavorites = () => {
-    toast({
-      title: "Added to favorites",
-      description: `${product.name} has been added to your favorites.`,
-    });
+  const { addToCart } = useCart();
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+  
+  const isFavorited = isFavorite(product.id);
+  
+  const handleFavoriteClick = () => {
+    if (isFavorited) {
+      removeFromFavorites(product.id);
+    } else {
+      addToFavorites(product);
+    }
   };
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="aspect-square relative overflow-hidden bg-muted">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="object-cover w-full h-full transition-transform hover:scale-105"
-        />
-      </div>
+      <Link to={`/products/${product.id}`}>
+        <div className="aspect-square relative overflow-hidden bg-muted">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="object-cover w-full h-full transition-transform hover:scale-105"
+          />
+        </div>
+      </Link>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-medium text-lg truncate">{product.name}</h3>
+            <Link to={`/products/${product.id}`}>
+              <h3 className="font-medium text-lg truncate hover:text-primary">{product.name}</h3>
+            </Link>
             <p className="text-muted-foreground text-sm truncate">
               {product.category}
             </p>
@@ -49,15 +54,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <Button 
           variant="outline" 
           size="icon"
-          onClick={addToFavorites}
-          className="rounded-full"
+          onClick={handleFavoriteClick}
+          className={`rounded-full ${isFavorited ? 'text-red-500 hover:text-red-600' : ''}`}
         >
-          <Heart className="h-4 w-4" />
-          <span className="sr-only">Add to favorites</span>
+          <Heart className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} />
+          <span className="sr-only">{isFavorited ? "Remove from favorites" : "Add to favorites"}</span>
         </Button>
         <Button 
           className="flex-1 rounded-full"
-          onClick={addToCart}
+          onClick={() => addToCart(product)}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Add to Cart

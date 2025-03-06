@@ -8,4 +8,6 @@ export interface Product {
   category: string;
   featured?: boolean;
   rating?: number;
+  stock?: number;
+  sku?: string;
 }
