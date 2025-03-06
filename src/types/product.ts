@@ -10,4 +10,8 @@ export interface Product {
   rating?: number;
   stock?: number;
   sku?: string;
+  // Adding fields to help with semantic search
+  keywords?: string[];
+  attributes?: Record<string, string>;
+  embeddings?: number[];
 }
