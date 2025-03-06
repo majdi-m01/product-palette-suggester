@@ -47,7 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {product.category}
             </p>
           </div>
-          <p className="font-semibold">${product.price.toFixed(2)}</p>
+          <p className="font-semibold">₹{product.price.toFixed(0)}</p>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex gap-2">
